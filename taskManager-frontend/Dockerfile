@@ -1,5 +1,5 @@
 # Étape 1 : Build de l'application React avec Vite
-FROM node:20-alpine AS build
+FROM node:25-alpine AS build
 
 WORKDIR /app
 
