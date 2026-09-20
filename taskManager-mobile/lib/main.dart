@@ -11,6 +11,6 @@ void main() {
   final tokenStorage = SecureTokenStorageImpl();
 
   runApp(
-    TaskManagerApp(tokenStorage: tokenStorage),
+    const TaskManagerApp(tokenStorage: tokenStorage),
   );
 }

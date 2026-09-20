@@ -108,10 +108,39 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
+            <!-- JaCoCo : couverture de tests + Quality Gate (cf. Module 2 du support DevOps) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.12</version>
+                <!--
+                    IMPORTANT : la configuration <rules> est placee ICI, au niveau du plugin
+                    (et non dans une <execution> specifique), car "jacoco:check" est invoque
+                    directement en ligne de commande dans le workflow CI (./mvnw jacoco:check).
+                    Une execution CLI directe d'un goal ne lit PAS la <configuration> propre a
+                    une <execution> liee au cycle de vie - seule la configuration de niveau
+                    plugin s'applique dans les deux cas (CLI directe et binding de cycle de vie).
+                -->
+                <configuration>
+                    <!--
+                        Seuil de depart volontairement modeste (voir "Strategie realiste" du support,
+                        CHAP 2). A augmenter progressivement une fois la couverture reelle mesuree
+                        (mvn jacoco:report puis lecture de target/site/jacoco/index.html).
+                    -->
+                    <rules>
+                        <rule>
+                            <element>BUNDLE</element>
+                            <limits>
+                                <limit>
+                                    <counter>LINE</counter>
+                                    <value>COVEREDRATIO</value>
+                                    <minimum>0.50</minimum>
+                                </limit>
+                            </limits>
+                        </rule>
+                    </rules>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
@@ -130,20 +159,6 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
-                        <configuration>
-                            <rules>
-                                <rule>
-                                    <element>BUNDLE</element>
-                                    <limits>
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.50</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                            </rules>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
