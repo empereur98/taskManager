@@ -38,8 +38,9 @@ export const TasksPage: React.FC = () => {
         ? [...data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         : [];
       setTasks(sorted);
-    } catch (err: any) {
-      toast.error(err.message || 'Impossible de récupérer les tâches.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Impossible de récupérer les tâches.';
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -108,8 +109,9 @@ export const TasksPage: React.FC = () => {
       setIsFormOpen(false);
       setEditingTask(null);
       await fetchTasks();
-    } catch (err: any) {
-      toast.error(err.message || 'Échec de l\'enregistrement de la tâche.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Échec de l\'enregistrement de la tâche.';
+      toast.error(msg);
       throw err;
     } finally {
       setIsSubmitting(false);
@@ -127,8 +129,9 @@ export const TasksPage: React.FC = () => {
       setIsDeleteOpen(false);
       setTaskToDelete(null);
       await fetchTasks();
-    } catch (err: any) {
-      toast.error(err.message || 'Impossible de supprimer la tâche.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Impossible de supprimer la tâche.';
+      toast.error(msg);
     } finally {
       setIsDeleting(false);
     }
@@ -144,8 +147,9 @@ export const TasksPage: React.FC = () => {
       });
       toast.success(`Statut mis à jour : ${newStatus === 'DONE' ? 'Terminée' : newStatus}`);
       await fetchTasks();
-    } catch (err: any) {
-      toast.error(err.message || 'Échec du changement de statut.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Échec du changement de statut.';
+      toast.error(msg);
     }
   };
 

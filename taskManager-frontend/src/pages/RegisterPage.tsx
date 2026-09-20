@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../api/auth.api';
+import { ApiError } from '../api/client';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { CheckSquare, AlertCircle, Eye, EyeOff } from 'lucide-react';
@@ -47,11 +48,17 @@ export const RegisterPage: React.FC = () => {
       // En cas de succès, un toast de confirmation s'affiche et l'utilisateur est redirigé vers la page de connexion
       toast.success('Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
       navigate('/login');
-    } catch (err: any) {
-      if (err.fieldErrors) {
-        setErrors(err.fieldErrors);
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        if (err.fieldErrors) {
+          setErrors(err.fieldErrors);
+        }
+        setServerError(err.message || 'Une erreur est survenue lors de la création du compte.');
+      } else if (err instanceof Error) {
+        setServerError(err.message);
+      } else {
+        setServerError('Une erreur est survenue lors de la création du compte.');
       }
-      setServerError(err.message || 'Une erreur est survenue lors de la création du compte.');
     } finally {
       setIsLoading(false);
     }

@@ -29,7 +29,8 @@ jobs:
         with:
           languages: java
           source-root: taskManager-backend
-
+      - name: Make mvnw executable
+        run: chmod +x mvnw
       - name: Build
         run: ./mvnw -B -DskipTests package
 

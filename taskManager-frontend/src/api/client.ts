@@ -13,19 +13,20 @@ export async function checkBackendHealth(): Promise<boolean> {
 
 export class ApiError extends Error {
   status: number;
-  data: any;
+  data: unknown;
   fieldErrors?: Record<string, string>;
 
-  constructor(message: string, status: number, data?: any) {
+  constructor(message: string, status: number, data?: unknown) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.data = data;
     if (data && typeof data === 'object') {
-      if (data.fieldErrors && typeof data.fieldErrors === 'object') {
-        this.fieldErrors = data.fieldErrors;
-      } else if (data.errors && typeof data.errors === 'object' && !Array.isArray(data.errors)) {
-        this.fieldErrors = data.errors;
+      const errorData = data as Record<string, unknown>;
+      if (errorData.fieldErrors && typeof errorData.fieldErrors === 'object' && !Array.isArray(errorData.fieldErrors)) {
+        this.fieldErrors = errorData.fieldErrors as Record<string, string>;
+      } else if (errorData.errors && typeof errorData.errors === 'object' && !Array.isArray(errorData.errors)) {
+        this.fieldErrors = errorData.errors as Record<string, string>;
       }
     }
   }
@@ -35,7 +36,7 @@ interface RequestOptions extends RequestInit {
   requiresAuth?: boolean;
 }
 
-export async function apiClient<T = any>(
+export async function apiClient<T = unknown>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
@@ -82,7 +83,7 @@ export async function apiClient<T = any>(
     }
 
     // Tenter de parser la réponse JSON
-    let responseData: any = null;
+    let responseData: unknown = null;
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       responseData = await response.json().catch(() => null);
@@ -94,19 +95,35 @@ export async function apiClient<T = any>(
       let errorMessage = '';
 
       if (typeof responseData === 'object' && responseData !== null) {
-        if (responseData.message) {
-          errorMessage = responseData.message;
-        } else if (responseData.error && typeof responseData.error === 'string') {
-          errorMessage = responseData.error;
-        } else if (responseData.fieldErrors && typeof responseData.fieldErrors === 'object') {
-          errorMessage = Object.entries(responseData.fieldErrors).map(([field, msg]) => `${field}: ${msg}`).join(', ');
-        } else if (responseData.detail) {
-          errorMessage = responseData.detail;
-        } else if (responseData.errors) {
-          if (Array.isArray(responseData.errors)) {
-            errorMessage = responseData.errors.map((e: any) => (typeof e === 'string' ? e : e.defaultMessage || e.message || JSON.stringify(e))).join(', ');
-          } else if (typeof responseData.errors === 'object') {
-            errorMessage = Object.entries(responseData.errors).map(([field, msg]) => `${field}: ${msg}`).join(', ');
+        const errObj = responseData as Record<string, unknown>;
+        if (typeof errObj.message === 'string') {
+          errorMessage = errObj.message;
+        } else if (typeof errObj.error === 'string') {
+          errorMessage = errObj.error;
+        } else if (errObj.fieldErrors && typeof errObj.fieldErrors === 'object') {
+          errorMessage = Object.entries(errObj.fieldErrors as Record<string, unknown>)
+            .map(([field, msg]) => `${field}: ${String(msg)}`)
+            .join(', ');
+        } else if (typeof errObj.detail === 'string') {
+          errorMessage = errObj.detail;
+        } else if (errObj.errors) {
+          if (Array.isArray(errObj.errors)) {
+            errorMessage = errObj.errors
+              .map((e: unknown) => {
+                if (typeof e === 'string') return e;
+                if (e && typeof e === 'object') {
+                  const entry = e as Record<string, unknown>;
+                  if (typeof entry.defaultMessage === 'string') return entry.defaultMessage;
+                  if (typeof entry.message === 'string') return entry.message;
+                  return JSON.stringify(entry);
+                }
+                return String(e);
+              })
+              .join(', ');
+          } else if (typeof errObj.errors === 'object') {
+            errorMessage = Object.entries(errObj.errors as Record<string, unknown>)
+              .map(([field, msg]) => `${field}: ${String(msg)}`)
+              .join(', ');
           }
         }
       } else if (typeof responseData === 'string' && responseData.length > 0) {
@@ -146,15 +163,16 @@ export async function apiClient<T = any>(
 
     console.log(`📥 [Backend http://localhost:8080 Succès ${response.status}] pour ${url}:`, responseData);
     return responseData as T;
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof ApiError) {
       throw error;
     }
 
+    const errorMsg = error instanceof Error ? error.message : undefined;
     console.error('❌ [Backend Injoignable]', {
       targetUrl: url,
       error,
-      message: error?.message,
+      message: errorMsg,
     });
 
     // Erreur réseau (ex: serveur injoignable, backend éteint, ou CORS)

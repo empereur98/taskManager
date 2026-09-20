@@ -160,7 +160,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
                 // Champ Statut (Dropdown)
                 DropdownButtonFormField<TaskStatus>(
-                  value: _selectedStatus,
+                  initialValue: _selectedStatus,
                   decoration: const InputDecoration(
                     labelText: 'Statut *',
                     prefixIcon: Icon(Icons.flag_outlined),

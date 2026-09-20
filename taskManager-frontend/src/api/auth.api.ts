@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { AuthResponse } from '../types';
+import type { AuthResponse, User } from '../types';
 
 export interface LoginPayload {
   email: string;
@@ -21,8 +21,8 @@ export const authApi = {
     });
   },
 
-  register: async (credentials: RegisterPayload): Promise<{ message?: string; [key: string]: any }> => {
-    return apiClient<{ message?: string; [key: string]: any }>('/api/auth/register', {
+  register: async (credentials: RegisterPayload): Promise<User> => {
+    return apiClient<User>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify(credentials),
       requiresAuth: false,

@@ -61,7 +61,8 @@ jobs:
           java-version: "21"
           cache: maven
           cache-dependency-path: taskManager-backend/pom.xml
-
+      - name: Make mvnw executable
+        run: chmod +x mvnw
       - name: Build (compile)
         run: ./mvnw -B compile
 

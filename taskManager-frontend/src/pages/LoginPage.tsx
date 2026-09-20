@@ -2,11 +2,18 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api/auth.api';
+import { ApiError } from '../api/client';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { CheckSquare, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { BackendStatusBadge } from '../components/layout/BackendStatusBadge';
 import { toast } from 'sonner';
+
+interface LocationState {
+  from?: {
+    pathname?: string;
+  };
+}
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -22,7 +29,7 @@ export const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Redirection d'origine (si redirigé par ProtectedRoute)
-  const from = (location.state as any)?.from?.pathname || '/tasks';
+  const from = (location.state as LocationState | null)?.from?.pathname || '/tasks';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,11 +64,17 @@ export const LoginPage: React.FC = () => {
       } else {
         setServerError('Réponse invalide du serveur (aucun token reçu).');
       }
-    } catch (err: any) {
-      if (err.fieldErrors) {
-        setErrors(err.fieldErrors);
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        if (err.fieldErrors) {
+          setErrors(err.fieldErrors);
+        }
+        setServerError(err.message || 'Une erreur est survenue lors de la connexion.');
+      } else if (err instanceof Error) {
+        setServerError(err.message);
+      } else {
+        setServerError('Une erreur est survenue lors de la connexion.');
       }
-      setServerError(err.message || 'Une erreur est survenue lors de la connexion.');
     } finally {
       setIsLoading(false);
     }

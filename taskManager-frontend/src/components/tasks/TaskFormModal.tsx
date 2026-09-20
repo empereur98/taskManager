@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Task, TaskStatus, CreateTaskDto, UpdateTaskDto } from '../../types';
+import { ApiError } from '../../api/client';
 import { Dialog } from '../ui/Dialog';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -49,8 +50,8 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
         description: description.trim() || undefined,
         status,
       });
-    } catch (err: any) {
-      if (err?.fieldErrors?.title) {
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.fieldErrors?.title) {
         setTitleError(err.fieldErrors.title);
       }
     }
