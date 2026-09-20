@@ -1,0 +1,72 @@
+name: CD - Mobile
+
+# Contrairement au backend et au frontend, il n'y a pas de "Continuous
+# Deployment" pour le mobile (pas de compte Play Store dans le cadre de cet
+# exercice) : on s'arrete a la "Continuous Delivery" du Module 4, c'est-a-dire
+# un artefact deployable et versionne (l'APK), mis a disposition automatique-
+# ment mais pas publie chez l'utilisateur final sans action manuelle.
+on:
+  workflow_run:
+    workflows: ["CI - Mobile"]
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: write # necessaire pour creer une GitHub Release
+
+defaults:
+  run:
+    working-directory: taskManager-mobile
+
+jobs:
+  build-release-apk:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        # NB : sans keystore de production configure (secrets.ANDROID_KEYSTORE_*),
+        # l'APK release est signe avec la cle de debug Flutter par defaut,
+        # suffisant pour une distribution de test mais pas pour le Play Store.
+        run: |
+          flutter build apk --release \
+            --dart-define=API_BASE_URL=${{ vars.API_BASE_URL_TEST }}
+
+      - name: Rename APK with commit SHA (tracabilite, cf. Module 4)
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk \
+             dist/taskmanager-mobile-sha-${{ github.sha }}.apk
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: taskmanager-mobile-apk
+          path: taskManager-mobile/dist/*.apk
+          retention-days: 30
+
+      - name: Publish GitHub Release with the APK attached
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mobile-sha-${{ github.sha }}
+          name: "TaskManager Mobile - build ${{ github.sha }}"
+          files: taskManager-mobile/dist/*.apk
+          prerelease: true
+
+  notify-failure:
+    needs: build-release-apk
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notifier l'echec du build mobile
+        run: echo "Le build APK a echoue sur le commit ${{ github.sha }} - a brancher sur un webhook Slack/Discord via secrets.WEBHOOK_URL."

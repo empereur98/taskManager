@@ -1,0 +1,84 @@
+name: CD - Backend
+
+# Le declenchement depend du succes complet de la CI backend (build, tests,
+# JaCoCo, secret scan, SAST, scan de conteneur) : cf. remarque pedagogique
+# du Module 4. Le filtre "paths" de la CI garantit qu'elle ne s'execute que
+# lorsque backend/** change ; ce workflow ne se declenche donc lui aussi
+# que dans ce cas.
+on:
+  workflow_run:
+    workflows: ["CI - Backend"]
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}-backend
+
+jobs:
+  publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: taskManager-backend
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
+
+  deploy-test:
+    needs: publish
+    runs-on: ubuntu-latest
+    environment:
+      name: test
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: taskmanager-backend-test
+          region: ${{ secrets.GCP_REGION }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          image: ghcr.io/${{ github.repository }}-backend:sha-${{ github.sha }}
+          env_vars: |
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}
+            SPRING_DATASOURCE_URL=${{ secrets.DB_URL }}
+            SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}
+            SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}
+
+      - name: Smoke test
+        run: |
+          curl --fail --retry 5 --retry-delay 5 "${{ steps.deploy.outputs.url }}/actuator/health"
+
+  notify-failure:
+    needs: [publish, deploy-test]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notifier l'echec du deploiement
+        run: echo "Le deploiement backend a echoue sur le commit ${{ github.sha }} - a brancher sur un webhook Slack/Discord via secrets.WEBHOOK_URL."

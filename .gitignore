@@ -1,0 +1,8 @@
+# Ce .gitignore racine complete (sans les remplacer) les .gitignore
+# specifiques a backend/ et frontend/, deja presents dans chaque sous-dossier.
+
+.DS_Store
+*.log
+
+# Environnements locaux (racine, si un .env global est utilise pour docker-compose)
+.env

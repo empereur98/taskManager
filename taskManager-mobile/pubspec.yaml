@@ -1,0 +1,29 @@
+name: task_manager_mobile
+description: "Application mobile Task Manager (Flutter, bonus) consommant l'API Spring Boot."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Client HTTP et interceptors (cahier des charges § 3.2 & § 3.3)
+  dio: ^5.11.1
+  # Gestion d'état et injection de dépendances (cahier des charges § 3.2)
+  provider: ^6.1.5+1
+  # Stockage sécurisé du token JWT (cahier des charges § 3.2)
+  flutter_secure_storage: ^9.2.4
+  # Formatage des dates (cahier des charges § 3.2)
+  intl: ^0.20.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  # Règles de linting strictes (cahier des charges § 3.2)
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

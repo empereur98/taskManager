@@ -1,0 +1,113 @@
+name: CI - Mobile
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'taskManager-mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'taskManager-mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: taskManager-mobile
+
+jobs:
+  # ---------------------------------------------------------------------
+  # 1. Secret scanning en tete de pipeline (cf. Module 3)
+  # ---------------------------------------------------------------------
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---------------------------------------------------------------------
+  # 2. Analyse statique + Tests + Quality Gate (equivalent mobile du Module 2)
+  #    flutter analyze  -> equivalent SAST/checkstyle (CodeQL ne supporte pas
+  #                         Dart, l'analyseur Dart avec regles strictes
+  #                         (analysis_options.yaml) en tient lieu)
+  #    flutter test      -> equivalent JUnit/Vitest (tests deja presents :
+  #                         test/data, test/presentation/providers)
+  #    lcov + seuil       -> equivalent JaCoCo/Vitest coverage
+  # ---------------------------------------------------------------------
+  build-and-test:
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Static analysis (flutter analyze)
+        run: flutter analyze --fatal-infos
+
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Unit tests + coverage
+        run: flutter test --coverage
+
+      - name: Coverage Quality Gate
+        uses: VeryGoodOpenSource/very_good_coverage@v3
+        with:
+          path: taskManager-mobile/coverage/lcov.info
+          min_coverage: 40
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-coverage
+          path: taskManager-mobile/coverage/
+          retention-days: 14
+
+  # ---------------------------------------------------------------------
+  # 3. SCA : scan des dependances Dart/pub (equivalent Trivy/npm audit,
+  #    complement a Dependabot, cf. Module 3). Trivy sait lire pubspec.lock
+  #    en mode "filesystem", sans avoir besoin de construire un artefact.
+  # ---------------------------------------------------------------------
+  dependency-scan:
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy filesystem scan (pubspec.lock)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: taskManager-mobile
+          format: sarif
+          output: taskManager-mobile/trivy-fs-results.sarif
+          severity: HIGH,CRITICAL
+          exit-code: "0" # avertissement uniquement : base CVE Dart moins mature, cf. Module 3 "warning vs bloquant"
+
+      - name: Upload Trivy results to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: taskManager-mobile/trivy-fs-results.sarif

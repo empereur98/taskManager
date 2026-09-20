@@ -1,0 +1,150 @@
+name: CI - Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'taskManager-frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'taskManager-frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: taskManager-frontend
+
+jobs:
+  # ---------------------------------------------------------------------
+  # 1. Secret scanning en tete de pipeline (cf. Module 3)
+  # ---------------------------------------------------------------------
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---------------------------------------------------------------------
+  # 2. Build, Lint, Tests, Quality Gate (equivalent frontend du Module 2)
+  #    npm ci             -> reproductibilite (equivalent du pom.xml Maven)
+  #    tsc + vite build   -> "build" (equivalent mvn compile/package)
+  #    eslint             -> qualite statique (equivalent checkstyle)
+  #    vitest + coverage  -> equivalent JUnit + JaCoCo
+  # ---------------------------------------------------------------------
+  build-and-test:
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: taskManager-frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (type-check + bundle Vite)
+        run: npm run build
+
+      - name: Unit tests + coverage (Quality Gate Vitest)
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-coverage
+          path: taskManager-frontend/coverage/
+          retention-days: 14
+
+      - name: Upload build artifact (dist)
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: taskManager-frontend/dist/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------
+  # 3. SCA : audit des dependances npm (complement a Dependabot, cf. Module 3)
+  # ---------------------------------------------------------------------
+  sca:
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: taskManager-frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci || npm install
+      - name: npm audit (bloquant sur severite haute/critique)
+        run: npm audit --audit-level=high
+
+  # ---------------------------------------------------------------------
+  # 4. SAST : analyse statique JS/TS (cf. Module 3)
+  # ---------------------------------------------------------------------
+  sast:
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          source-root: taskManager-frontend
+
+      - uses: github/codeql-action/analyze@v3
+
+  # ---------------------------------------------------------------------
+  # 5. Container security : build de l'image Nginx + scan Trivy
+  # ---------------------------------------------------------------------
+  container-scan:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image (test uniquement, pas de push)
+        run: docker build -t taskmanager-frontend:${{ github.sha }} .
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: taskmanager-frontend:${{ github.sha }}
+          format: sarif
+          output: taskManager-frontend/trivy-results.sarif
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+
+      - name: Upload Trivy results to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: taskManager-frontend/trivy-results.sarif

@@ -1,0 +1,148 @@
+name: CI - Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'taskManager-backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'taskManager-backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: taskManager-backend
+
+jobs:
+  # ---------------------------------------------------------------------
+  # 1. Secret scanning en tete de pipeline (cf. Module 3) : un secret deja
+  #    pousse doit etre detecte avant toute autre etape.
+  # ---------------------------------------------------------------------
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---------------------------------------------------------------------
+  # 2. Build + Tests + Quality Gate (cf. Module 2)
+  #    NB : les tests de ce projet sont tous nommes *Test.java (Surefire),
+  #    y compris les tests d'integration @SpringBootTest / @WebMvcTest
+  #    (base H2 en memoire, pas de Testcontainers necessaire ici).
+  #    Il n'y a donc pas de split Surefire/*Test / Failsafe/*IT comme dans
+  #    l'exemple TaskFlow du support : tout tourne dans le meme "mvn test".
+  #    -> Si des tests avec Testcontainers sont ajoutes plus tard, dupliquer
+  #    ce job en ajoutant maven-failsafe-plugin + suffixe *IT.java.
+  # ---------------------------------------------------------------------
+  build-and-test:
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: taskManager-backend/pom.xml
+
+      - name: Build (compile)
+        run: ./mvnw -B compile
+
+      - name: Tests (unitaires + slices Spring @WebMvcTest/@SpringBootTest)
+        run: ./mvnw -B test
+
+      - name: JaCoCo coverage report + Quality Gate
+        run: ./mvnw -B jacoco:report jacoco:check
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: taskManager-backend/target/site/jacoco/
+          retention-days: 14
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: taskManager-backend/target/surefire-reports/
+          retention-days: 14
+
+  # ---------------------------------------------------------------------
+  # 3. SAST : analyse statique du code Java (cf. Module 3)
+  # ---------------------------------------------------------------------
+  sast:
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: java
+          source-root: taskManager-backend
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: taskManager-backend/pom.xml
+
+      - name: Build for CodeQL
+        run: ./mvnw -B -DskipTests package
+
+      - uses: github/codeql-action/analyze@v3
+
+  # ---------------------------------------------------------------------
+  # 4. Container security : build de l'image + scan Trivy (cf. Module 3 et 4)
+  # ---------------------------------------------------------------------
+  container-scan:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image (test uniquement, pas de push)
+        run: docker build -t taskmanager-backend:${{ github.sha }} .
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: taskmanager-backend:${{ github.sha }}
+          format: sarif
+          output: taskManager-backend/trivy-results.sarif
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+
+      - name: Upload Trivy results to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: taskManager-backend/trivy-results.sarif

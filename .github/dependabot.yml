@@ -1,0 +1,44 @@
+version: 2
+updates:
+  # --- Backend (Java / Maven) ---
+  - package-ecosystem: "maven"
+    directory: "/taskManager-backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "backend"]
+
+  - package-ecosystem: "docker"
+    directory: "/taskManager-backend"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "backend", "docker"]
+
+  # --- Frontend (npm) ---
+  - package-ecosystem: "npm"
+    directory: "/taskManager-frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "frontend"]
+
+  - package-ecosystem: "docker"
+    directory: "/taskManager-frontend"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "frontend", "docker"]
+
+  # --- Mobile (Dart / pub) ---
+  - package-ecosystem: "pub"
+    directory: "/taskManager-mobile"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "mobile"]
+
+  # --- Pipeline elle-meme ---
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "ci"]

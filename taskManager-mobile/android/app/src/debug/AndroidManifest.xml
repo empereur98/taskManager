@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.task_manager_mobile">
+    <!-- Autorisation du HTTP en clair uniquement en debug pour communiquer avec le backend local (cahier des charges § 11.3) -->
+    <application android:usesCleartextTraffic="true"/>
+</manifest>
