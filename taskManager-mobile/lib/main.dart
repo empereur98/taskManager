@@ -8,7 +8,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Instanciation de la couche de stockage sécurisé du token JWT
-  final tokenStorage = SecureTokenStorageImpl();
+  const tokenStorage = SecureTokenStorageImpl();
 
   runApp(
     const TaskManagerApp(tokenStorage: tokenStorage),
