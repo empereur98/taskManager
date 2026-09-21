@@ -42,7 +42,8 @@ class ApiClient {
           return handler.next(options);
         },
         onError: (DioException error, handler) async {
-          final isAuthRoute = error.requestOptions.path.startsWith('/api/auth/');
+          final isAuthRoute =
+              error.requestOptions.path.startsWith('/api/auth/');
 
           // Si 401 sur une requête authentifiée : déclencher le callback de session expirée
           if (error.response?.statusCode == 401 && !isAuthRoute) {

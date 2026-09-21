@@ -55,7 +55,8 @@ class TaskRepositoryImpl implements TaskRepository {
       if (data != null) {
         return Task.fromJson(data);
       }
-      throw const AppException('Réponse inattendue lors de la création de la tâche.');
+      throw const AppException(
+          'Réponse inattendue lors de la création de la tâche.');
     } on DioException catch (dioError) {
       if (dioError.error is AppException) {
         throw dioError.error as AppException;
@@ -88,7 +89,8 @@ class TaskRepositoryImpl implements TaskRepository {
       if (data != null) {
         return Task.fromJson(data);
       }
-      throw const AppException('Réponse inattendue lors de la modification de la tâche.');
+      throw const AppException(
+          'Réponse inattendue lors de la modification de la tâche.');
     } on DioException catch (dioError) {
       if (dioError.error is AppException) {
         throw dioError.error as AppException;

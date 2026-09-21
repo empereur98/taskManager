@@ -43,14 +43,16 @@ void main() {
       expect(await mockTokenStorage.read(), equals('fake_jwt_token_12345'));
     });
 
-    test('login with error sets errorMessage and remains unauthenticated', () async {
+    test('login with error sets errorMessage and remains unauthenticated',
+        () async {
       mockAuthRepository.shouldFail = true;
 
       final success = await authProvider.login('bad@test.com', 'wrongpassword');
 
       expect(success, isFalse);
       expect(authProvider.status, equals(AuthStatus.unknown));
-      expect(authProvider.errorMessage, contains('Email ou mot de passe incorrect'));
+      expect(authProvider.errorMessage,
+          contains('Email ou mot de passe incorrect'));
       expect(await mockTokenStorage.read(), isNull);
     });
 

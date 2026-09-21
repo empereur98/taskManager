@@ -10,7 +10,8 @@ class AppException implements Exception {
   const AppException(this.message, [this.statusCode]);
 
   /// Fabrique qui transforme une [DioException] en [AppException] compréhensible.
-  factory AppException.fromDioException(DioException dioException, {bool isAuthRequest = false}) {
+  factory AppException.fromDioException(DioException dioException,
+      {bool isAuthRequest = false}) {
     switch (dioException.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
@@ -27,9 +28,11 @@ class AppException implements Exception {
         // Extraction du message renvoyé par l'API backend Spring Boot
         String? serverMessage;
         if (data is Map<String, dynamic>) {
-          if (data['message'] is String && (data['message'] as String).trim().isNotEmpty) {
+          if (data['message'] is String &&
+              (data['message'] as String).trim().isNotEmpty) {
             serverMessage = data['message'] as String;
-          } else if (data['error'] is String && (data['error'] as String).trim().isNotEmpty) {
+          } else if (data['error'] is String &&
+              (data['error'] as String).trim().isNotEmpty) {
             serverMessage = data['error'] as String;
           }
         }

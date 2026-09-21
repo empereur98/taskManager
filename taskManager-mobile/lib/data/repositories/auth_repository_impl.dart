@@ -11,7 +11,8 @@ class AuthRepositoryImpl implements AuthRepository {
   const AuthRepositoryImpl(this._apiClient);
 
   @override
-  Future<String> login({required String email, required String password}) async {
+  Future<String> login(
+      {required String email, required String password}) async {
     try {
       final response = await _apiClient.dio.post<Map<String, dynamic>>(
         '/api/auth/login',
@@ -26,7 +27,8 @@ class AuthRepositoryImpl implements AuthRepository {
         return data['token'] as String;
       }
 
-      throw const AppException('Réponse d\'authentification invalide du serveur.');
+      throw const AppException(
+          'Réponse d\'authentification invalide du serveur.');
     } on DioException catch (dioError) {
       if (dioError.error is AppException) {
         throw dioError.error as AppException;

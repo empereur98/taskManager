@@ -6,7 +6,8 @@ void main() {
   group('TaskStatus Model', () {
     test('fromApiValue parses standard values correctly', () {
       expect(TaskStatus.fromApiValue('TODO'), equals(TaskStatus.todo));
-      expect(TaskStatus.fromApiValue('IN_PROGRESS'), equals(TaskStatus.inProgress));
+      expect(TaskStatus.fromApiValue('IN_PROGRESS'),
+          equals(TaskStatus.inProgress));
       expect(TaskStatus.fromApiValue('DONE'), equals(TaskStatus.done));
     });
 
@@ -67,7 +68,8 @@ void main() {
       expect(task.status, equals(TaskStatus.inProgress));
     });
 
-    test('toJson produces expected structure with null description when empty', () {
+    test('toJson produces expected structure with null description when empty',
+        () {
       final task = Task(
         id: 1,
         title: 'Task 1',

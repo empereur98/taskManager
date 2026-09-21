@@ -23,18 +23,17 @@ class Task {
   /// Gère la conversion de `description: null` en chaîne vide `""` (§ 7.1).
   factory Task.fromJson(Map<String, dynamic> json) {
     final rawDescription = json['description'];
-    final description = (rawDescription == null) ? '' : rawDescription.toString();
+    final description =
+        (rawDescription == null) ? '' : rawDescription.toString();
 
     final rawCreatedAt = json['createdAt'];
     final rawUpdatedAt = json['updatedAt'];
 
-    final createdAt = rawCreatedAt is String
-        ? DateTime.parse(rawCreatedAt)
-        : DateTime.now();
+    final createdAt =
+        rawCreatedAt is String ? DateTime.parse(rawCreatedAt) : DateTime.now();
 
-    final updatedAt = rawUpdatedAt is String
-        ? DateTime.parse(rawUpdatedAt)
-        : createdAt;
+    final updatedAt =
+        rawUpdatedAt is String ? DateTime.parse(rawUpdatedAt) : createdAt;
 
     return Task(
       id: json['id'] as int,
@@ -89,8 +88,10 @@ class Task {
           updatedAt == other.updatedAt;
 
   @override
-  int get hashCode => Object.hash(id, title, description, status, createdAt, updatedAt);
+  int get hashCode =>
+      Object.hash(id, title, description, status, createdAt, updatedAt);
 
   @override
-  String toString() => 'Task(id: $id, title: $title, status: ${status.apiValue})';
+  String toString() =>
+      'Task(id: $id, title: $title, status: ${status.apiValue})';
 }

@@ -84,7 +84,8 @@ class TaskTile extends StatelessWidget {
                   icon: const Icon(Icons.edit_outlined, size: 20),
                   color: const Color(0xFF4B5563),
                   tooltip: 'Modifier la tâche',
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  constraints:
+                      const BoxConstraints(minWidth: 44, minHeight: 44),
                   onPressed: onEdit,
                 ),
                 // Bouton Supprimer
@@ -92,7 +93,8 @@ class TaskTile extends StatelessWidget {
                   icon: const Icon(Icons.delete_outline_rounded, size: 20),
                   color: const Color(0xFFDC2626),
                   tooltip: 'Supprimer la tâche',
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  constraints:
+                      const BoxConstraints(minWidth: 44, minHeight: 44),
                   onPressed: onDelete,
                 ),
               ],

@@ -28,7 +28,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     super.initState();
     final task = widget.taskToEdit;
     _titleController = TextEditingController(text: task?.title ?? '');
-    _descriptionController = TextEditingController(text: task?.description ?? '');
+    _descriptionController =
+        TextEditingController(text: task?.description ?? '');
     _selectedStatus = task?.status ?? TaskStatus.todo;
   }
 
@@ -101,7 +102,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Modifier la tâche' : 'Ajouter une tâche'),
+        title:
+            Text(widget.isEditing ? 'Modifier la tâche' : 'Ajouter une tâche'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -208,15 +210,16 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : Text(widget.isEditing ? 'Enregistrer les modifications' : 'Créer la tâche'),
+                      : Text(widget.isEditing
+                          ? 'Enregistrer les modifications'
+                          : 'Créer la tâche'),
                 ),
                 const SizedBox(height: 12),
 
                 // Bouton Annuler
                 OutlinedButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () => Navigator.of(context).pop(),
+                  onPressed:
+                      isSubmitting ? null : () => Navigator.of(context).pop(),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(48),
                     shape: RoundedRectangleBorder(

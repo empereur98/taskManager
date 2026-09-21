@@ -31,7 +31,8 @@ class MockAuthRepository implements AuthRepository {
   String expectedToken = 'fake_jwt_token_12345';
 
   @override
-  Future<String> login({required String email, required String password}) async {
+  Future<String> login(
+      {required String email, required String password}) async {
     if (shouldFail) {
       throw const AppException('Email ou mot de passe incorrect.', 401);
     }
@@ -56,7 +57,8 @@ class MockTaskRepository implements TaskRepository {
   @override
   Future<List<Task>> fetchAll() async {
     if (shouldFail) {
-      throw const AppException('Impossible de contacter le serveur. Vérifiez votre connexion.');
+      throw const AppException(
+          'Impossible de contacter le serveur. Vérifiez votre connexion.');
     }
     return List<Task>.from(_tasks);
   }

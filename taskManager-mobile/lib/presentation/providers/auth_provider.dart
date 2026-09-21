@@ -57,7 +57,8 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final token = await _authRepository.login(email: email, password: password);
+      final token =
+          await _authRepository.login(email: email, password: password);
       await _tokenStorage.write(token);
       _status = AuthStatus.authenticated;
       _isLoading = false;

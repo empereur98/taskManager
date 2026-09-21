@@ -50,7 +50,8 @@ class _TasksScreenState extends State<TasksScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Confirmer la suppression'),
-        content: Text('Voulez-vous vraiment supprimer la tâche "${task.title}" ?'),
+        content:
+            Text('Voulez-vous vraiment supprimer la tâche "${task.title}" ?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -87,7 +88,8 @@ class _TasksScreenState extends State<TasksScreen> {
     } else {
       messenger.showSnackBar(
         SnackBar(
-          content: Text(tasksProvider.errorMessage ?? 'Erreur lors de la suppression.'),
+          content: Text(
+              tasksProvider.errorMessage ?? 'Erreur lors de la suppression.'),
           backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
         ),
