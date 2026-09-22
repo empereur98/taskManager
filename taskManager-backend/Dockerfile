@@ -1,5 +1,5 @@
 # Étape 1 : Build de l'application avec Eclipse Temurin JDK 21
-FROM eclipse-temurin:21-jdk-alpine AS build
+FROM eclipse-temurin:25-jdk-alpine AS build
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ COPY src ./src
 RUN ./mvnw clean package -DskipTests -B
 
 # Étape 2 : Image d'exécution JRE 21 avec utilisateur non-root
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 WORKDIR /app
 
