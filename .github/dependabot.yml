@@ -35,6 +35,8 @@ updates:
         versions: [">= 19.a"]
       - dependency-name: "react-dom"
         versions: [">= 19.a"]
+      - dependency-name: "@vitejs/plugin-react"
+        versions: [">= 4.4.a"]
 
 
   - package-ecosystem: "docker"
