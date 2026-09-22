@@ -40,45 +40,29 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
             ${{ env.IMAGE_NAME }}:latest
-
-  deploy-test:
+  deploy-render:
     needs: publish
     runs-on: ubuntu-latest
     environment:
       name: test
-      url: ${{ steps.deploy.outputs.url }}
+      url: ${{ secrets.BACKEND_PROD_URL }}
     steps:
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Deploy to Cloud Run
-        id: deploy
-        uses: google-github-actions/deploy-cloudrun@v2
-        with:
-          service: taskmanager-backend-test
-          region: ${{ secrets.GCP_REGION }}
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          image: ghcr.io/${{ github.repository }}-backend:sha-${{ github.sha }}
-          env_vars: |
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}
-            SPRING_DATASOURCE_URL=${{ secrets.DB_URL }}
-            SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}
-            SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}
-
-      - name: Smoke test
+      - name: Déclencher le redéploiement sur Render
         run: |
-          curl --fail --retry 5 --retry-delay 5 "${{ steps.deploy.outputs.url }}/actuator/health"
+          echo "Déclenchement du redéploiement Render..."
+          curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+
+      - name: Smoke test (vérification de santé)
+        run: |
+          echo "Attente du démarrage du service sur Render..."
+          sleep 30
+          curl --fail --retry 15 --retry-delay 10 "${{ secrets.BACKEND_PROD_URL }}/actuator/health"
 
   notify-failure:
-    needs: [publish, deploy-test]
+    needs: [publish, deploy-render]
     if: failure()
     runs-on: ubuntu-latest
     steps:
-      - name: Notifier l'echec du deploiement
-        run: echo "Le deploiement backend a echoue sur le commit ${{ github.sha }} - a brancher sur un webhook Slack/Discord via secrets.WEBHOOK_URL."
+      - name: Notifier l'échec du déploiement
+        run: echo "Le déploiement backend a échoué sur le commit ${{ github.sha }} - à brancher sur un webhook Slack/Discord via secrets.WEBHOOK_URL."
+
