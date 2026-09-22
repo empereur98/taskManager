@@ -2,6 +2,11 @@
 
 Application web moderne et réactive de gestion de tâches développée avec **React 18**, **Vite**, **TypeScript** et **Tailwind CSS**, conforme aux spécifications du cahier des charges (`cahier_des_charges_global_task_manager.md`).
 
+## 🌐 Déploiement en ligne
+
+L'application web est déployée en continu sur **Vercel** et accessible pour tester :
+👉 **[https://task-manager-self-pi-69.vercel.app/](https://task-manager-self-pi-69.vercel.app/)**
+
 ---
 
 ## 🚀 Fonctionnalités Clés
