@@ -2,6 +2,11 @@
 
 Application mobile Flutter (bonus) consommant la même API Spring Boot que le frontend web (`taskManager-frontend`).
 
+## 📲 Téléchargement de l'APK Release (Android)
+
+L'APK Android est compilé automatiquement à chaque version par le pipeline de Continuous Delivery GitHub Actions :
+👉 **[Télécharger le dernier APK sur GitHub Releases](https://github.com/empereur98/taskManager/releases)**
+
 ---
 
 ## 1. Présentation & Architecture

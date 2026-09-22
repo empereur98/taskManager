@@ -4,10 +4,11 @@ Application de gestion de tâches : API REST Spring Boot (`taskManager-backend/`
 (`taskManager-frontend/`) et application mobile Flutter *(bonus)* (`taskManager-mobile/`), avec pipeline CI/CD GitHub
 Actions (`.github/workflows/`) déployant le backend sur Render, le frontend sur Vercel et l'APK mobile sur GitHub Releases.
 
-## 🌐 Démo en ligne (Accès public)
+## 🌐 Démo en ligne & Téléchargement (Accès public)
 
-L'application web est déployée et accessible publiquement pour vos tests :
-👉 **[https://task-manager-self-pi-69.vercel.app/](https://task-manager-self-pi-69.vercel.app/)**
+- 💻 **Application Web (Frontend React)** : 👉 **[https://task-manager-self-pi-69.vercel.app/](https://task-manager-self-pi-69.vercel.app/)**
+- 📱 **Application Mobile Android (APK)** : 👉 **[Télécharger l'APK sur GitHub Releases](https://github.com/empereur98/taskManager/releases)**
+  *(L'APK release est généré et signé automatiquement à chaque livraison sur `main` par le pipeline CD - Mobile).*
 
 ---
 
