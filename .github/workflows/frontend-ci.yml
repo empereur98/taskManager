@@ -6,11 +6,13 @@ on:
     paths:
       - 'taskManager-frontend/**'
       - '.github/workflows/frontend-ci.yml'
+      - '.github/workflows/frontend-cd.yml'
   pull_request:
     branches: [main]
     paths:
       - 'taskManager-frontend/**'
       - '.github/workflows/frontend-ci.yml'
+      - '.github/workflows/frontend-cd.yml'
 
 permissions:
   contents: read

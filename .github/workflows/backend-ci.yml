@@ -6,11 +6,13 @@ on:
     paths:
       - 'taskManager-backend/**'
       - '.github/workflows/backend-ci.yml'
+      - '.github/workflows/backend-cd.yml'
   pull_request:
     branches: [main]
     paths:
       - 'taskManager-backend/**'
       - '.github/workflows/backend-ci.yml'
+      - '.github/workflows/backend-cd.yml'
 
 permissions:
   contents: read

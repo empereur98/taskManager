@@ -6,11 +6,13 @@ on:
     paths:
       - 'taskManager-mobile/**'
       - '.github/workflows/mobile-ci.yml'
+      - '.github/workflows/mobile-cd.yml'
   pull_request:
     branches: [main]
     paths:
       - 'taskManager-mobile/**'
       - '.github/workflows/mobile-ci.yml'
+      - '.github/workflows/mobile-cd.yml'
 
 permissions:
   contents: read
