@@ -7,6 +7,7 @@ et adapté au monorepo exigé par le cahier des charges (`task-manager/backend/`
 `task-manager/frontend/`, `task-manager/mobile/`, `.github/workflows/`).
 
 ## 1. Ce qui a été ajouté ou modifié par rapport à vos projets d'origine
+## hello
 
 Tout le reste (contrôleurs, composants React, écrans Flutter, etc.) est votre code tel quel — seuls
 ces fichiers sont nouveaux ou patchés :
