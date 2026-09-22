@@ -118,7 +118,6 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.15</version>
-
                 <!--
                     IMPORTANT : la configuration <rules> est placee ICI, au niveau du plugin
                     (et non dans une <execution> specifique), car "jacoco:check" est invoque
