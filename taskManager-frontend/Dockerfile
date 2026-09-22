@@ -8,8 +8,9 @@ ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
 # Copie des fichiers de dépendances
-COPY package*.json ./
-RUN npm ci || npm install
+COPY package*.json .npmrc* ./
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
 
 # Copie du code source et compilation
 COPY . .

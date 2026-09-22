@@ -26,6 +26,16 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 5
     labels: ["dependencies", "frontend"]
+    ignore:
+      - dependency-name: "@types/react-dom"
+        versions: [">= 19.a"]
+      - dependency-name: "@types/react"
+        versions: [">= 19.a"]
+      - dependency-name: "react"
+        versions: [">= 19.a"]
+      - dependency-name: "react-dom"
+        versions: [">= 19.a"]
+
 
   - package-ecosystem: "docker"
     directory: "/taskManager-frontend"
