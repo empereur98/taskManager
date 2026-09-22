@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: test
-      url: ${{ vars.BACKEND_PROD_URL || secrets.BACKEND_PROD_URL }}
+      url: ${{ vars.BACKEND_PROD_URL }}
     steps:
       - name: Déclencher le redéploiement sur Render
         run: |
@@ -58,7 +58,7 @@ jobs:
 
       - name: Smoke test (vérification de santé)
         run: |
-          BACKEND_URL="${{ vars.BACKEND_PROD_URL || secrets.BACKEND_PROD_URL }}"
+          BACKEND_URL="${{ vars.BACKEND_PROD_URL }}"
           if [ -n "$BACKEND_URL" ]; then
             echo "Attente du démarrage du service sur Render ($BACKEND_URL)..."
             sleep 30

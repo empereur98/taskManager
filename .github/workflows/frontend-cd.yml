@@ -43,7 +43,8 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: test
-      url: ${{ vars.FRONTEND_PROD_URL || secrets.FRONTEND_PROD_URL }}
+      url: ${{ vars.FRONTEND_PROD_URL }}
+
     steps:
       - name: Déclencher le redéploiement sur Vercel
         run: |
