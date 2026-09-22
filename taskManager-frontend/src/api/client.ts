@@ -3,8 +3,33 @@ import { toast } from 'sonner';
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export async function checkBackendHealth(): Promise<boolean> {
+  const cleanBase = API_BASE_URL.replace(/\/$/, '');
+  
+  // 1. Essai sur /actuator/health (léger, ultra-rapide) avec timeout 10s (tolérance cold-start)
   try {
-    const res = await fetch(`${API_BASE_URL}/v3/api-docs`, { method: 'GET', mode: 'cors' });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(`${cleanBase}/actuator/health`, {
+      method: 'GET',
+      mode: 'cors',
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) return true;
+  } catch {
+    // Si /actuator/health échoue (ex: 404 ou timeout), on tente le fallback /v3/api-docs
+  }
+
+  // 2. Fallback sur /v3/api-docs
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(`${cleanBase}/v3/api-docs`, {
+      method: 'GET',
+      mode: 'cors',
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
     return res.ok;
   } catch {
     return false;
@@ -57,7 +82,7 @@ export async function apiClient<T = unknown>(
     }
   }
 
-  console.log(`📡 [Backend http://localhost:8080] Envoi ${rest.method || 'GET'} -> ${url}`);
+  console.log(`📡 [Backend ${API_BASE_URL}] Envoi ${rest.method || 'GET'} -> ${url}`);
 
   try {
     const response = await fetch(url, {
@@ -157,11 +182,11 @@ export async function apiClient<T = unknown>(
         }
       }
 
-      console.warn(`⚠️ [Backend http://localhost:8080 Erreur ${response.status}] pour ${url}:`, responseData);
+      console.warn(`⚠️ [Backend ${API_BASE_URL} Erreur ${response.status}] pour ${url}:`, responseData);
       throw new ApiError(errorMessage, response.status, responseData);
     }
 
-    console.log(`📥 [Backend http://localhost:8080 Succès ${response.status}] pour ${url}:`, responseData);
+    console.log(`📥 [Backend ${API_BASE_URL} Succès ${response.status}] pour ${url}:`, responseData);
     return responseData as T;
   } catch (error: unknown) {
     if (error instanceof ApiError) {
