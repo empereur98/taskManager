@@ -47,7 +47,8 @@ jobs:
         # suffisant pour une distribution de test mais pas pour le Play Store.
         run: |
           flutter build apk --release \
-            --dart-define=API_BASE_URL=${{ vars.API_BASE_URL || vars.API_BASE_URL_TEST }}
+            --dart-define=API_BASE_URL=${{ vars.API_BASE_URL || vars.API_BASE_URL_TEST }} \
+            --android-skip-build-dependency-validation
 
       - name: Rename APK with commit SHA (tracabilite, cf. Module 4)
         run: |
