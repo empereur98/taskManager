@@ -113,8 +113,12 @@ jobs:
           cache: maven
           cache-dependency-path: taskManager-backend/pom.xml
 
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
       - name: Build for CodeQL
         run: ./mvnw -B -DskipTests package
+
 
       - uses: github/codeql-action/analyze@v3
 
