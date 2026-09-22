@@ -72,7 +72,8 @@ en découle directement.
 | **Module 1** (Git/GitHub) | Convention de branches `main` / `feature/xxx`, PR obligatoire | `.gitignore` déjà correct dans vos deux projets (`.env` ignoré) ; le secret `jwt.secret` codé en dur dans `application.properties` a été externalisé (`${JWT_SECRET:...}`), à l'image de la mise en garde du Module 1 sur les secrets committés |
 | **Module 2** (CI : build, tests, qualité) | Ordre `checkout → setup → build → tests → quality gate`, cache des dépendances, upload d'artefacts, JaCoCo comme Quality Gate | **Backend** : pas de séparation Surefire(`*Test`)/Failsafe(`*IT`) car vos tests d'intégration (`@SpringBootTest`, `@WebMvcTest`) tournent sur H2 en mémoire sans Testcontainers — ils s'exécutent donc tous dans le même `mvn test`, en un seul job. **Frontend** (absent du support, qui ne couvre que du Java) : équivalent construit avec `npm ci` → `eslint` → `tsc + vite build` → `vitest --coverage`, le seuil de couverture Vitest jouant le rôle du seuil JaCoCo |
 | **Module 3** (DevSecOps) | Gitleaks en tête de pipeline (bloquant), CodeQL en mode PR (léger) + planifié (complet, `codeql-scheduled.yml`), Trivy sur l'image Docker (bloquant sur HIGH/CRITICAL), Dependabot | Ajout de `npm audit` côté frontend (équivalent SCA natif à Dependabot, absent de l'écosystème Maven du support) ; CodeQL utilise `javascript-typescript` au lieu de `java` pour le frontend |
-| **Module 4** (Packaging & CD) | Dockerfile multi-stage, tags `sha-<commit>` + `latest` sur GHCR, déclenchement du CD via `workflow_run` conditionné au succès de la CI, smoke test post-déploiement, job `notify-failure` | **Déploiement web** : le support utilise Render pour sa simplicité pédagogique ; votre cahier des charges (section 10, RD-05) exige explicitement **GCP Cloud Run** — le CD utilise donc `google-github-actions/deploy-cloudrun` avec authentification par clé de service (`GCP_SA_KEY`), documentée dans le support comme l'option "AWS" plus proche d'un contexte d'entreprise. **Mobile** : il n'y a pas de "Continuous *Deployment*" (pas de compte Play Store dans le cadre de l'exercice) — le pipeline s'arrête à la **Continuous *Delivery*** définie en Module 4 : l'APK release est produit automatiquement et publié comme artefact GitHub Actions + GitHub Release, prêt à être installé manuellement pour test |
+| **Module 4** (Packaging & CD) | Dockerfile multi-stage, tags `sha-<commit>` + `latest` sur GHCR, déclenchement du CD via `workflow_run` conditionné au succès de la CI, smoke test post-déploiement, job `notify-failure` | **Déploiement web (options gratuites hors Google)** : déploiement continu du backend sur **Render** via Deploy Hook sécurisé (`RENDER_DEPLOY_HOOK`) et du frontend sur **Vercel** (`VERCEL_DEPLOY_HOOK` ou intégration Git native). Base de données MySQL managée hébergée gratuitement sur **Aiven.io**. **Mobile** : pas de compte Play Store payant dans le cadre de l'exercice — le pipeline respecte la **Continuous Delivery** du Module 4 : l'APK release est produit automatiquement et publié comme artefact GitHub Actions + GitHub Release, prêt à être installé manuellement pour test |
+
 
 ### Cas particulier : le module mobile (absent du support, ajouté par cohérence)
 
@@ -91,59 +92,56 @@ transposent néanmoins fidèlement sa logique :
 
 ## 4. Secrets et variables à configurer sur GitHub
 
-`Settings → Secrets and variables → Actions`, sur l'environnement `test` (recommandé, cf. Module 4
-"Gestion des secrets" — évite de mettre des secrets de déploiement au niveau du dépôt entier) :
+`Settings → Secrets and variables → Actions` :
 
 **Secrets (chiffrés) :**
 | Nom | Usage |
 |---|---|
-| `GCP_SA_KEY` | Clé JSON du compte de service GCP (droits Cloud Run Admin + Service Account User) |
-| `GCP_PROJECT_ID` | ID du projet GCP |
-| `GCP_REGION` | Région Cloud Run (ex. `europe-west1`) |
+| `RENDER_DEPLOY_HOOK` | URL du webhook de redéploiement Render (`https://api.render.com/deploy/srv-xxx?key=yyy`) |
+| `VERCEL_DEPLOY_HOOK` *(optionnel)* | URL du webhook de redéploiement Vercel (si l'intégration Git automatique n'est pas utilisée) |
 | `JWT_SECRET` | Secret JWT (32 caractères minimum), jamais commité |
-| `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Connexion à la base de données de l'environnement de test |
-| `CORS_ALLOWED_ORIGINS` | URL(s) du frontend déployé |
+| `DB_URL` | URL JDBC Aiven MySQL (`jdbc:mysql://<host>:<port>/defaultdb?sslMode=REQUIRED`) |
+| `DB_USERNAME`, `DB_PASSWORD` | Identifiants Aiven MySQL |
+| `CORS_ALLOWED_ORIGINS` | URL(s) du frontend Vercel autorisées par le backend |
 | `WEBHOOK_URL` *(optionnel)* | Notification Slack/Discord en cas d'échec de déploiement |
 
-**Variables (non sensibles, `vars.*`) :**
+**Variables (non sensibles, `vars.*` ou secrets) :**
 | Nom | Usage |
 |---|---|
-| `VITE_API_URL_TEST` | URL du backend déployé, injectée au build de l'image frontend |
-| `API_BASE_URL_TEST` | URL du backend déployé, injectée au build de l'APK mobile (`--dart-define`) |
+| `BACKEND_PROD_URL` | URL publique du backend Render (ex. `https://taskmanager-backend-xxx.onrender.com`) |
+| `FRONTEND_PROD_URL` | URL publique du frontend Vercel (ex. `https://taskmanager-frontend-xxx.vercel.app`) |
+| `VITE_API_URL` (ou `VITE_API_URL_TEST`) | URL du backend déployé, injectée au build de l'image frontend |
+| `API_BASE_URL` (ou `API_BASE_URL_TEST`) | URL du backend déployé, injectée au build de l'APK mobile (`--dart-define`) |
 
 **Optionnel (signature Play Store, non requis pour ce pipeline) :**
 | Nom | Usage |
 |---|---|
 | `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | À ajouter si vous voulez signer l'APK avec une vraie clé de production plutôt que la clé de debug Flutter par défaut |
 
-`GITHUB_TOKEN` est fourni automatiquement par GitHub Actions (utilisé pour Gitleaks, CodeQL et la
-publication sur GHCR) — ne pas le recréer manuellement.
+`GITHUB_TOKEN` est fourni automatiquement par GitHub Actions (utilisé pour Gitleaks, CodeQL, la publication sur GHCR et la création de GitHub Releases) — ne pas le recréer manuellement.
 
 ## 5. Étapes de mise en route
 
-1. Créer un compte de service GCP dédié au déploiement (`taskmanager-deployer@<project>.iam.gserviceaccount.com`),
-   lui attribuer les rôles `roles/run.admin` et `roles/iam.serviceAccountUser`, générer une clé JSON.
-2. Renseigner les secrets et variables ci-dessus dans GitHub (idéalement sur un *environment* nommé
-   `test` avec règle de protection si vous voulez une validation manuelle avant déploiement).
-3. Copier les fichiers de ce dossier dans votre dépôt (section 1).
-4. Committer sur une branche `feature/cicd-pipeline`, ouvrir une pull request : les jobs
+1. Provisionner la base de données MySQL gratuite sur **Aiven.io** et récupérer la chaîne JDBC SSL (`?sslMode=REQUIRED`).
+2. Créer le Web Service backend sur **Render.com** en pointant vers `taskManager-backend/` (Docker), renseigner les variables d'environnement Aiven, et récupérer le *Deploy Hook*.
+3. Créer le projet frontend sur **Vercel** en pointant vers `taskManager-frontend/` (Vite), avec `VITE_API_URL` pointant vers Render.
+4. Renseigner les secrets et variables ci-dessus dans GitHub (`Settings → Secrets and variables → Actions`).
+5. Committer sur une branche `feature/cicd-pipeline`, ouvrir une pull request : les jobs
    `secret-scan`, `build-and-test`, `sast`, `sca` (frontend), `container-scan` (backend/frontend),
    `dependency-scan` (mobile) doivent tous passer avant fusion.
-5. Dans `Settings → Branches`, protéger `main` en exigeant ces checks (Module 1 et 2 : "une CI qui
+6. Dans `Settings → Branches`, protéger `main` en exigeant ces checks (Module 1 et 2 : "une CI qui
    n'empêche pas la fusion n'a aucune valeur").
-6. Fusionner : `CD - Backend` et `CD - Frontend` se déclenchent automatiquement après succès de
-   leur CI respective, publient les images sur GHCR et déploient sur Cloud Run.
-7. Ajuster progressivement les seuils de couverture (`jacoco-check` à 50 % dans `pom.xml`,
-   `thresholds` à 40 % dans `vitest.config.ts`) au fur et à mesure que la suite de tests s'étoffe —
-   ce sont des points de départ volontairement modestes, pas des objectifs finaux (cf. Module 2,
-   "Stratégie réaliste").
+7. Fusionner : `CD - Backend` et `CD - Frontend` se déclenchent automatiquement après succès de
+   leur CI respective, publient les images de traçabilité sur GHCR et déclenchent le déploiement sur Render et Vercel. `CD - Mobile` compile et publie automatiquement l'APK sur GitHub Releases.
+8. Ajuster progressivement les seuils de couverture (`jacoco-check` à 50 % dans `pom.xml`,
+   `thresholds` à 40 % dans `vitest.config.ts`) au fur et à mesure que la suite de tests s'étoffe.
 
-## 6. Limites connues / pistes d'amélioration (cf. Module 4 "Comment améliorer encore cette pipeline")
+## 6. Limites connues / pistes d'amélioration (cf. Module 4)
 
 - Les actions tierces (`actions/checkout@v4`, etc.) sont épinglées par tag et non par SHA de commit :
   à durcir avant un usage en production réelle.
-- L'authentification GCP utilise une clé de service statique ; passer à la *Workload Identity
-  Federation* (sans clé stockée) est recommandé à terme.
+- Sur le plan gratuit Render, le backend se met en veille après 15 minutes d'inactivité (un ping régulier via UptimeRobot gratuit permet de le garder actif si besoin).
+
 - L'APK mobile est signé avec la clé de debug Flutter par défaut (pas de keystore de production
   configuré) : suffisant pour une installation de test manuelle, à ne pas publier tel quel sur le
   Play Store.

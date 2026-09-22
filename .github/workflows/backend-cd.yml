@@ -45,18 +45,27 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: test
-      url: ${{ secrets.BACKEND_PROD_URL }}
+      url: ${{ vars.BACKEND_PROD_URL || secrets.BACKEND_PROD_URL }}
     steps:
       - name: Déclencher le redéploiement sur Render
         run: |
-          echo "Déclenchement du redéploiement Render..."
-          curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK }}" ]; then
+            echo "Déclenchement du redéploiement Render..."
+            curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+          else
+            echo "RENDER_DEPLOY_HOOK non défini : déploiement pris en charge nativement par Render sur push Git."
+          fi
 
       - name: Smoke test (vérification de santé)
         run: |
-          echo "Attente du démarrage du service sur Render..."
-          sleep 30
-          curl --fail --retry 15 --retry-delay 10 "${{ secrets.BACKEND_PROD_URL }}/actuator/health"
+          BACKEND_URL="${{ vars.BACKEND_PROD_URL || secrets.BACKEND_PROD_URL }}"
+          if [ -n "$BACKEND_URL" ]; then
+            echo "Attente du démarrage du service sur Render ($BACKEND_URL)..."
+            sleep 30
+            curl --fail --retry 15 --retry-delay 10 "$BACKEND_URL/actuator/health"
+          else
+            echo "BACKEND_PROD_URL non renseigné, smoke test ignoré."
+          fi
 
   notify-failure:
     needs: [publish, deploy-render]
