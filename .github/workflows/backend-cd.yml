@@ -25,7 +25,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Lowercase image name for Docker
+        run: |
+          echo "IMAGE_NAME=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')-backend" >> $GITHUB_ENV
+
       - name: Log in to GHCR
+
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
